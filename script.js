@@ -1,34 +1,34 @@
 function Site(){
-	var self = this,
+    var self = this,
         database = false;
-	
-	self.Users = {
-		Add: function(login){
-			query("INSERT INTO users (login) VALUES ('" + login + "')");
-		},
-		
-		Show: function(){
-			query("SELECT * FROM users", function(result){
-                console.log(JSON.stringify(result));
-            });
-		}
-	}
-	
-	self.Categories = {
-		Add: function(name){
-			query("INSERT INTO cats (name) VALUES ('" + name + "')");
-		},
+    
+    self.Users = {
+        Add: function(login){
+            query("INSERT INTO users (login) VALUES ('" + login + "')");
+        },
         
         Show: function(){
-			var result = query("SELECT * FROM cats", function(result){
+            query("SELECT * FROM users", function(result){
                 console.log(JSON.stringify(result));
             });
-		},
+        }
+    }
+    
+    self.Categories = {
+        Add: function(name){
+            query("INSERT INTO cats (name) VALUES ('" + name + "')");
+        },
+        
+        Show: function(){
+            var result = query("SELECT * FROM cats", function(result){
+                console.log(JSON.stringify(result));
+            });
+        },
         
         Delete: function(id){
             query("DELETE FROM cats WHERE id = " + id);
         }
-	}
+    }
     
     self.Films = {
         Add: function(name, category, image){
@@ -37,10 +37,10 @@ function Site(){
         },
         
         Show: function(){
-			var result = query("SELECT * FROM films", function(result){
+            var result = query("SELECT * FROM films", function(result){
                 console.log(JSON.stringify(result));
             });
-		}
+        }
     }
     
     function query(_query, _callback){
@@ -57,12 +57,12 @@ function Site(){
             }
 
             var query = database.query(_query, function(err, result) {
-				if(err)
-					throw new Error(_query + ': ' + err);
+                if(err)
+                    throw new Error(_query + ': ' + err);
 
                 if(_callback)
                     _callback(result.rows);
-			});
+            });
         }
         catch(e){
             console.error(e.message);
