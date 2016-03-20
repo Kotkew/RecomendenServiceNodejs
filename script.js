@@ -76,5 +76,3 @@ site.Users.Show();
 //site.Films.Add('Адреналин', 1);
 site.Films.Show();
 site.Categories.Show();
-
-//console.log(site.Categories.Add('Боевик'));
