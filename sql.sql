@@ -17,7 +17,7 @@ CREATE TABLE films (
 INSERT INTO users (login) VALUES ('Jason');
 INSERT INTO users (login) VALUES ('Statham');
 
-INSERT INTO cats (name) VALUES ('Боевик');
-INSERT INTO cats (name) VALUES ('Комедия');
+INSERT INTO cats (name) VALUES ('Р‘РѕРµРІРёРє');
+INSERT INTO cats (name) VALUES ('РљРѕРјРµРґРёСЏ');
 
-INSERT INTO films (name, category) VALUES ('Адреналин', 1);
+INSERT INTO films (name, category) VALUES ('РђРґСЂРµРЅР°Р»РёРЅ', 1);
