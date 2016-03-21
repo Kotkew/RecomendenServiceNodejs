@@ -1,6 +1,14 @@
+var pg = require('pg'),
+    express = require('express'),
+    swig = require('swig');
+    
+var app = express(),
+    connect = 'postgres://postgres:postgres@localhost/market';
+
 function Site(){
     var self = this,
-        database = false;
+        database = false,
+        system = new System();
     
     self.Users = {
         Add: function(login){
@@ -9,7 +17,7 @@ function Site(){
         
         Show: function(){
             query("SELECT * FROM users", function(result){
-                console.log(JSON.stringify(result));
+                return result;
             });
         }
     }
@@ -37,8 +45,29 @@ function Site(){
         },
         
         Show: function(){
-            var result = query("SELECT * FROM films", function(result){
-                console.log(JSON.stringify(result));
+            query("SELECT * FROM films", function(data){
+                system.addPath('/films', data);
+            });
+        },
+        
+        ShowByID: function(id){
+            query("SELECT * FROM films WHERE id = " + id, function(data){
+                system.addPath('/films/:film_id', data);
+            });
+        },
+        
+        Like: function(userID, filmID){
+            query("SELECT likes FROM films WHERE id = " + filmID, function(result){
+                result = result[0].likes;
+                
+                var index = result.indexOf(userID);
+                if (index == -1)
+                    result.push(userID);
+                else
+                    result.splice(index, 1);
+                    
+                result = JSON.stringify(result);
+                query("UPDATE films SET likes = '" + result + "' WHERE id = " + filmID);
             });
         }
     }
@@ -46,23 +75,32 @@ function Site(){
     function query(_query, _callback){
         try{
             if(!database){
-                var pg = require('pg');
-                database = new pg.Client('postgres://postgres:postgres@localhost/market');
-                
+                database = new pg.Client(connect);
                 database.on('drain', database.end.bind(database));
-                database.connect(function(err, client, done) {
-                    if(err)
-                        throw new Error('Ошибка подключения к бд.');
+                database.connect(function(error, client, done) {
+                    if(error){
+                        throw new Error(error);
+                    }
                 });
             }
 
-            var query = database.query(_query, function(err, result) {
-                if(err)
-                    throw new Error(_query + ': ' + err);
-
-                if(_callback)
-                    _callback(result.rows);
+            var query = database.query(_query),
+                result = [];
+                
+            query.on('error', function(error) {
+                throw new Error(error);
             });
+            
+            if(_callback){
+                query.on('row', function(row) {
+                    result.push(row);
+                });
+                
+                query.on('end', function(end) {
+                    result = JSON.stringify(result);
+                    _callback(result);
+                });
+            }
         }
         catch(e){
             console.error(e.message);
@@ -70,9 +108,24 @@ function Site(){
     }
 }
 
+function System(){
+    var self = this;
+    
+    self.addPath = function(path, content){
+        app.get(path, function (req, res) {
+            res.send(content);
+        });
+    }
+
+    app.listen(3000, function () {
+        console.log('Example app listening on port 3000!');
+    });
+}
+
 var site = new Site();
-//site.Users.Add('Jason 2');
-site.Users.Show();
-//site.Films.Add('Адреналин', 1);
+//var system = new System();
+//site.Films.Like(1, 1);
+//site.Films.ShowByID(1);
+//system.addPath('/');
+
 site.Films.Show();
-site.Categories.Show();

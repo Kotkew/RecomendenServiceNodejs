@@ -11,7 +11,7 @@ CREATE TABLE films (
     name VARCHAR NOT NULL,
     category INT NOT NULL,
     image TEXT,
-    LIKES JSON
+    likes JSON DEFAULT '[]'
 );
 
 INSERT INTO users (login) VALUES ('Jason');
