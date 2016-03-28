@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<link href="http://yastatic.net/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
+		<style>
+        .movies-list {
+            max-width: 960px;
+            margin: 30px 0 0 30px;
+            background: #f0f0f0;
+            border: 1px solid #d8d8d8;
+        }
+        .movies-list img {
+            max-width: 150px;
+        }
+        </style>
+        <title>{{ title }}</title>
+	</head>
+	<body>
+		<div class="movies-list">
+			<table class="table table-striped">
+				<thead>
+					<tr>
+						<td>ID</td>
+						<td>Афиша</td>
+                        <td>Название</td>
+						<td>Категория</td>
+						<td></td>
+					</tr>
+				</thead>
+				<tbody>
+                    {% for film in data %}
+					<tr>
+						<td>{{ film.id }}</td>
+						<td><img src="{{ film.image }}"></td>
+                        <td><a href="/films/{{ film.id }}">{{ film.name }}</a></td>
+						<td><a href="#">{{ film.category }}</a></td>
+						<td><span class="btn btn-primary">Мне нравится</span></td>
+					</tr>
+                    {% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<link href="http://yastatic.net/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
+		<style>
+        .movies-list {
+            max-width: 960px;
+            margin: 30px 0 0 30px;
+            background: #f0f0f0;
+            border: 1px solid #d8d8d8;
+        }
+        .movies-list img {
+            max-width: 300px;
+        }
+        </style>
+        <title>{{ title }}</title>
+	</head>
+	<body>
+		<div class="movies-list">
+			<table class="table table-striped">
+				<tbody>
+					<tr>
+                        <td><img src="{{ data[0].image }}"></td>
+						<td>
+                            ID: {{ data[0].id }}<br>
+                            Название: {{ data[0].name }}<br>
+                            <span class="btn btn-primary">Мне нравится</span>
+                        </td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</body>
+</html>

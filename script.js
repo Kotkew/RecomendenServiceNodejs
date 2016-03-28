@@ -45,14 +45,15 @@ function Site(){
         },
         
         Show: function(){
+            // "SELECT f.id, f.name, c.name as category, f.image, f.likes FROM films f LEFT JOIN cats c ON f.category = c.id ORDER BY f.id"
             query("SELECT * FROM films", function(data){
-                system.addPath('/films', data);
+                system.Page('/films', './template/films.html', data, 'Фильмы');
             });
         },
         
         ShowByID: function(id){
-            query("SELECT * FROM films WHERE id = " + id, function(data){
-                system.addPath('/films/:film_id', data);
+            query("SELECT * FROM films WHERE id = 1", function(data){
+                system.Page('/films/:film_id', './template/film.html', data[0], data[0].name);
             });
         },
         
@@ -97,7 +98,6 @@ function Site(){
                 });
                 
                 query.on('end', function(end) {
-                    result = JSON.stringify(result);
                     _callback(result);
                 });
             }
@@ -111,9 +111,13 @@ function Site(){
 function System(){
     var self = this;
     
-    self.addPath = function(path, content){
+    self.Page = function(path, template, data, title){
         app.get(path, function (req, res) {
-            res.send(content);
+            var page = swig.compileFile(template);
+            res.send(page({
+                'title': title || '',
+                'data': data
+            }));
         });
     }
 
@@ -129,3 +133,4 @@ var site = new Site();
 //system.addPath('/');
 
 site.Films.Show();
+site.Films.ShowByID();
