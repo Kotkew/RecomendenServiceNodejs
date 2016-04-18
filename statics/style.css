@@ -1,0 +1,27 @@
+html, body {
+	height: 100%;
+}
+.login-form {
+	max-width: 400px;
+	transform: translate(-50%, -50%);
+	position: relative;
+	top: 50%;
+	left: 50%;
+}
+.movies-list {
+	max-width: 960px;
+	margin: 30px 0 0 30px;
+	background: #f0f0f0;
+	border: 1px solid #d8d8d8;
+}
+.movies-list img {
+    max-width: 150px;
+}
+.movies-list.full img {
+    max-width: 300px;
+}
+.menu-list {
+    padding: 10px 30px;
+    background: #f0f0f0;
+    border-bottom: 1px solid #d8d8d8;
+}
