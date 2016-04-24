@@ -17,47 +17,38 @@ var pages = [
     }
 ];
 
-function System(){
-    var self = this;
-    
-    var app = express(),
-        database = false;
-        
-    self.Init = function(pages){
-        for (var i = 0, l = pages.length; i < l; i++){
-            self.Page(pages[i].path, pages[i].template, pages[i].query, pages[i].title);
+var actions = [
+    {
+        path: '/auth',
+        callback: function(){
+            SQL.Query('SELECT 1 FROM users WHERE id = ИД', function(data){
+                Console.log(data);
+            });
+        }
+    },
+    {
+        path: '/like',
+        callback: function(){
+            
         }
     }
-    
-    self.Page = function(path, template, _query, title){
-        app.get(path, function (req, res) {
-            console.log('Request: ' + path);
-            var page = swig.compileFile(template);
-            query(_query, function(data){
-                res.send(page({
-                    'title': title,
-                    'data': data
-                }));
-            });
-        });
-    }
+];
 
-    app.listen(3000, function() {
-        console.log('Example app listening on port 3000!');
-    });
+var SQL = {
+    Connect: false,
     
-    function query(query, callback){
+    Query: function(query, callback){
         try{
-            if(!database){
-                database = new pg.Client('postgres://postgres:postgres@localhost/market');
+            if(!this.Connect){
+                this.Connect = new pg.Client('postgres://postgres:postgres@localhost/market');
                 //database.on('drain', database.end.bind(database));
-                database.connect(function(error, client, done) {
+                this.Connect.connect(function(error, client, done) { //Что?)))
                     if(error)
                         throw new Error(error);
                 });
             }
 
-            var request = database.query(query),
+            var request = this.Connect.query(query),
                 result = [];
                 
             request.on('error', function(error) {
@@ -78,6 +69,45 @@ function System(){
             console.error(e.message);
         }
     }
+}
+
+function System(){
+    var self = this;
+    
+    var app = express(),
+        database = false;
+        
+    self.Init = function(pages){
+        for (var i = 0, l = pages.length; i < l; i++){
+            self.Page(pages[i].path, pages[i].template, pages[i].query, pages[i].title);
+        }
+    }
+    
+    self.Page = function(path, template, _query, title){
+        app.get(path, function (req, res) {
+            console.log('GET: ' + path);
+            
+            var page = swig.compileFile(template);
+            SQL.Query(_query, function(data){
+                res.send(page({
+                    'title': title,
+                    'data': data
+                }));
+            });
+        });
+    }
+    
+    self.SetAction = function(path, callback){
+        app.post(path, function (req, res) {
+            console.log('POST: ' + path);
+            
+            callback();
+        });
+    }
+    
+    app.listen(3000, function() {
+        console.log('Example app listening on port 3000!');
+    });
 }
 
 var system = new System();
