@@ -1,6 +1,7 @@
 var pg = require('pg'),
     express = require('express'),
-    swig = require('swig');
+    swig = require('swig'),
+    bodyParser = require('body-parser');
     
 var pages = [
     {
@@ -14,16 +15,23 @@ var pages = [
         path: '/films/:film_id',
         template: './template/film.html',
         query: 'SELECT * FROM films WHERE id = 1'
-    }
+    },
+    {
+        title: 'Вход на сайт',
+        path: '/',
+        template: './template/auth.html',
+        query: false
+    },
 ];
 
 var actions = [
     {
         path: '/auth',
-        callback: function(){
-            SQL.Query('SELECT 1 FROM users WHERE id = ИД', function(data){
+        callback: function(body){
+            console.log(JSON.stringify(body));
+            /*SQL.Query('SELECT 1 FROM users WHERE id = ИД', function(data){
                 Console.log(data);
-            });
+            });*/
         }
     },
     {
@@ -77,10 +85,15 @@ function System(){
     var app = express(),
         database = false;
         
+    app.use(express.static('statics'));
+    var urlencodedParser = bodyParser.urlencoded({ extended: false });
+        
     self.Init = function(pages){
-        for (var i = 0, l = pages.length; i < l; i++){
+        for (var i = 0, l = pages.length; i < l; i++)
             self.Page(pages[i].path, pages[i].template, pages[i].query, pages[i].title);
-        }
+        
+        for (var i = 0, l = actions.length; i < l; i++)
+            self.SetAction(actions[i].path, actions[i].callback);
     }
     
     self.Page = function(path, template, _query, title){
@@ -88,20 +101,29 @@ function System(){
             console.log('GET: ' + path);
             
             var page = swig.compileFile(template);
-            SQL.Query(_query, function(data){
-                res.send(page({
-                    'title': title,
-                    'data': data
-                }));
-            });
+            
+            if(_query){
+                SQL.Query(_query, function(data){
+                    res.send(page({
+                        'title': title,
+                        'data': data
+                    }));
+                });
+                
+                return;
+            }
+            
+            res.send(page({
+                'title': title
+            }));
         });
     }
     
     self.SetAction = function(path, callback){
-        app.post(path, function (req, res) {
+        app.post(path, urlencodedParser, function (req, res) {
             console.log('POST: ' + path);
             
-            callback();
+            callback(req.body);
         });
     }
     
@@ -112,3 +134,5 @@ function System(){
 
 var system = new System();
 system.Init(pages);
+
+//  на странице каждого фильма  - рекомендации дпругих фильмаов 
