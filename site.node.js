@@ -1,46 +1,100 @@
 var pg = require('pg'),
     express = require('express'),
     swig = require('swig'),
-    bodyParser = require('body-parser');
+    bodyParser = require('body-parser'),
+    cookieParser = require('cookie-parser'); //npm install cookie-parser
     
-var pages = [
-    {
-        title: 'Фильмы',
-        path: '/films',
-        template: './template/films.html',
-        query: 'SELECT * FROM films'
-    },
-    {
-        title: 'Фильм',
-        path: '/films/:film_id',
-        template: './template/film.html',
-        query: 'SELECT * FROM films WHERE id = 1'
-    },
-    {
-        title: 'Вход на сайт',
-        path: '/',
-        template: './template/auth.html',
-        query: false
-    },
-];
-
-var actions = [
-    {
-        path: '/auth',
-        callback: function(body){
-            console.log(JSON.stringify(body));
-            /*SQL.Query('SELECT 1 FROM users WHERE id = ИД', function(data){
-                Console.log(data);
-            });*/
+var Actions = {
+    GET: [
+        {
+            title: 'Вход на сайт',
+            path: '/',
+            template: './template/auth.html'
+        },
+        {
+            title: 'Фильмы',
+            path: '/films',
+            template: './template/films.html',
+            callback: function(page, resource){
+                SQL.Query('SELECT * FROM movie', function(data){
+                    resource.send(page({
+                        'title': this.title,
+                        'data': data
+                    }));
+                });
+            }
+        },
+        {
+            title: 'Фильм',
+            path: '/films/:film_id',
+            template: './template/film.html',
+            callback: function(page, resource, request){
+                SQL.Query('SELECT *, (SELECT 1 FROM likes WHERE user_id = ' + request.cookies.id + ' AND movie_id = ' + request.params.film_id + ') AS has_like FROM movie WHERE id = ' + request.params.film_id, function(data){
+                    SQL.Query('SELECT t1.text, t2.name FROM comment t1 JOIN users t2 ON t1.user_id = t2.id WHERE t1.movie_id = ' + request.params.film_id + ' ORDER BY t1.id', function(dataComments){
+                        data[0].comments = dataComments.length ? dataComments : false;
+                        
+                        resource.send(page({
+                            'title': this.title,
+                            'data': data[0]
+                        }));
+                    })
+                });
+            }
         }
-    },
-    {
-        path: '/like',
-        callback: function(){
-            
+    ],
+    
+    POST: [
+        {
+            path: '/auth',
+            callback: function(body, resource){
+                //console.log(JSON.stringify(body));
+                
+                if(body.login){
+                    SQL.Query('SELECT id FROM users WHERE name = \'' + body.login + '\' LIMIT 1', function(data){
+                        if(!data.length){
+                            SQL.Query('INSERT INTO users (name) VALUES (\'' + body.login + '\') RETURNING id', function(data){
+                                createCookie(data[0].id);
+                            });
+                            
+                            return;
+                        }
+                        
+                        createCookie(data[0].id);
+                    });
+                    
+                    return;
+                }
+                
+                resource.redirect('/');
+                
+                function createCookie(id){
+                    resource.cookie('id', id, { maxAge: 900000 });
+                    resource.cookie('login', body.login, { maxAge: 900000 });
+                    resource.redirect('/films');
+                }
+            }
+        },
+        {
+            path: '/like',
+            callback: function(body, resource, request){
+                SQL.Query('SELECT 1 FROM likes WHERE user_id = ' + request.cookies.id + ' AND movie_id = ' + body.movie + ' LIMIT 1', function(data){
+                    if(!data.length){
+                        SQL.Query('INSERT INTO likes (user_id, movie_id) VALUES (' + request.cookies.id + ', ' + body.movie + ')');
+                    }
+                });
+                
+                resource.redirect(request.get('referer'));
+            }
+        },
+        {
+            path: '/comment',
+            callback: function(body, resource, request){
+                SQL.Query('INSERT INTO comment (user_id, movie_id, text) VALUES (' + request.cookies.id + ', ' + body.movie + ', \'' + body.comment + '\')');
+                resource.redirect(request.get('referer'));
+            }
         }
-    }
-];
+    ]
+}
 
 var SQL = {
     Connect: false,
@@ -50,7 +104,7 @@ var SQL = {
             if(!this.Connect){
                 this.Connect = new pg.Client('postgres://postgres:postgres@localhost/market');
                 //database.on('drain', database.end.bind(database));
-                this.Connect.connect(function(error, client, done) { //Что?)))
+                this.Connect.connect(function(error, client, done) { //Connect.connect щито?
                     if(error)
                         throw new Error(error);
                 });
@@ -60,7 +114,7 @@ var SQL = {
                 result = [];
                 
             request.on('error', function(error) {
-                throw new Error(error);
+                throw new Error(query + ' : ' + error);
             });
             
             if(callback){
@@ -79,37 +133,41 @@ var SQL = {
     }
 }
 
-function System(){
+function System(actions){
     var self = this;
     
     var app = express(),
         database = false;
         
     app.use(express.static('statics'));
+    app.use(cookieParser());
+    
     var urlencodedParser = bodyParser.urlencoded({ extended: false });
+    
+    self.Init = function(){
+        for (var i = 0, l = actions.GET.length; i < l; i++)
+            self.GET(actions.GET[i].path, actions.GET[i].template, actions.GET[i].title, actions.GET[i].callback);
         
-    self.Init = function(pages){
-        for (var i = 0, l = pages.length; i < l; i++)
-            self.Page(pages[i].path, pages[i].template, pages[i].query, pages[i].title);
+        for (var i = 0, l = actions.POST.length; i < l; i++)
+            self.POST(actions.POST[i].path, actions.POST[i].callback);
         
-        for (var i = 0, l = actions.length; i < l; i++)
-            self.SetAction(actions[i].path, actions[i].callback);
+        app.listen(3000, function() {
+            console.log('Example app listening on port 3000!');
+        });
     }
     
-    self.Page = function(path, template, _query, title){
+    self.GET = function(path, template, title, callback){
         app.get(path, function (req, res) {
             console.log('GET: ' + path);
-            
             var page = swig.compileFile(template);
             
-            if(_query){
-                SQL.Query(_query, function(data){
-                    res.send(page({
-                        'title': title,
-                        'data': data
-                    }));
-                });
+            if(callback){
+                if(!Object.getOwnPropertyNames(req.cookies).length){
+                    res.redirect('/');
+                    return;
+                }
                 
+                callback(page, res, req);
                 return;
             }
             
@@ -119,20 +177,16 @@ function System(){
         });
     }
     
-    self.SetAction = function(path, callback){
+    self.POST = function(path, callback){
         app.post(path, urlencodedParser, function (req, res) {
             console.log('POST: ' + path);
-            
-            callback(req.body);
+            callback(req.body, res, req);
         });
     }
     
-    app.listen(3000, function() {
-        console.log('Example app listening on port 3000!');
-    });
+    self.Init();
 }
 
-var system = new System();
-system.Init(pages);
+var system = new System(Actions);
 
 //  на странице каждого фильма  - рекомендации дпругих фильмаов 
