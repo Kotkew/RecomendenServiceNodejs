@@ -15,17 +15,15 @@
 						<td>Афиша</td>
                         <td>Название</td>
 						<td>Категория</td>
-						<td></td>
 					</tr>
 				</thead>
 				<tbody>
                     {% for film in data %}
 					<tr>
 						<td>{{ film.id }}</td>
-						<td><img src="{{ film.image }}"></td>
-                        <td><a href="/films/{{ film.id }}">{{ film.name }}</a></td>
+						<td><img src="{{ film.poster }}"></td>
+                        <td><a href="/films/{{ film.id }}">{{ film.title }}</a></td>
 						<td><a href="#">{{ film.category }}</a></td>
-						<td><span class="btn btn-primary">Мне нравится</span></td>
 					</tr>
                     {% endfor %}
 				</tbody>

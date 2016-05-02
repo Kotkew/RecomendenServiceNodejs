@@ -25,3 +25,15 @@ html, body {
     background: #f0f0f0;
     border-bottom: 1px solid #d8d8d8;
 }
+.comment-place {
+    padding: 5px;
+}
+.user-comment {
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+    padding: 15px 5px;
+}
+.user-comment span {
+    font-weight: bold;
+    display: block;
+}
