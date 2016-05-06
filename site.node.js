@@ -7,37 +7,45 @@ var pg = require('pg'),
 var Actions = {
     GET: [
         {
-            title: 'Вход на сайт',
             path: '/',
             template: './template/auth.html'
         },
         {
-            title: 'Фильмы',
+            path: '/exit',
+            template: './template/auth.html',
+            callback: function(page, resource){
+                resource.clearCookie('id');
+                resource.clearCookie('login');
+                resource.redirect('/');
+            }
+        },
+        {
             path: '/films',
             template: './template/films.html',
             callback: function(page, resource){
                 SQL.Query('SELECT * FROM movie', function(data){
                     resource.send(page({
-                        'title': this.title,
                         'data': data
                     }));
                 });
             }
         },
         {
-            title: 'Фильм',
             path: '/films/:film_id',
             template: './template/film.html',
             callback: function(page, resource, request){
                 SQL.Query('SELECT *, (SELECT 1 FROM likes WHERE user_id = ' + request.cookies.id + ' AND movie_id = ' + request.params.film_id + ') AS has_like FROM movie WHERE id = ' + request.params.film_id, function(data){
                     SQL.Query('SELECT t1.text, t2.name FROM comment t1 JOIN users t2 ON t1.user_id = t2.id WHERE t1.movie_id = ' + request.params.film_id + ' ORDER BY t1.id', function(dataComments){
-                        data[0].comments = dataComments.length ? dataComments : false;
-                        
-                        resource.send(page({
-                            'title': this.title,
-                            'data': data[0]
-                        }));
-                    })
+                        SQL.Query('SELECT * FROM movie WHERE rank BETWEEN ' + data[0].rank + ' - 0.5 AND ' + data[0].rank + ' + 0.5 AND year BETWEEN ' + data[0].year + ' - 3 AND ' + data[0].year + ' + 3 AND id <> ' + data[0].id, function(dataSame){
+
+                            resource.send(page({
+                                'movie': data[0],
+                                'near': dataSame,
+                                'comments': dataComments
+                            }));
+                            
+                        });
+                    });
                 });
             }
         }
@@ -80,7 +88,10 @@ var Actions = {
                 SQL.Query('SELECT 1 FROM likes WHERE user_id = ' + request.cookies.id + ' AND movie_id = ' + body.movie + ' LIMIT 1', function(data){
                     if(!data.length){
                         SQL.Query('INSERT INTO likes (user_id, movie_id) VALUES (' + request.cookies.id + ', ' + body.movie + ')');
+                        return;
                     }
+                    
+                    SQL.Query('DELETE FROM likes WHERE user_id = ' + request.cookies.id + ' AND movie_id = ' + body.movie);
                 });
                 
                 resource.redirect(request.get('referer'));
@@ -146,7 +157,7 @@ function System(actions){
     
     self.Init = function(){
         for (var i = 0, l = actions.GET.length; i < l; i++)
-            self.GET(actions.GET[i].path, actions.GET[i].template, actions.GET[i].title, actions.GET[i].callback);
+            self.GET(actions.GET[i].path, actions.GET[i].template, actions.GET[i].callback);
         
         for (var i = 0, l = actions.POST.length; i < l; i++)
             self.POST(actions.POST[i].path, actions.POST[i].callback);
@@ -156,7 +167,7 @@ function System(actions){
         });
     }
     
-    self.GET = function(path, template, title, callback){
+    self.GET = function(path, template, callback){
         app.get(path, function (req, res) {
             console.log('GET: ' + path);
             var page = swig.compileFile(template);
@@ -171,9 +182,7 @@ function System(actions){
                 return;
             }
             
-            res.send(page({
-                'title': title
-            }));
+            res.send(page());
         });
     }
     
@@ -188,5 +197,3 @@ function System(actions){
 }
 
 var system = new System(Actions);
-
-//  на странице каждого фильма  - рекомендации дпругих фильмаов 
