@@ -1,20 +1,16 @@
-<!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="UTF-8">
-		<link href="http://yastatic.net/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
-		<link rel="stylesheet" href="/style.css">
-        <title>{{ title }}</title>
-	</head>
-	<body>
-		<div class="login-form">
-			<form action="/auth" method="post">
-			  <div class="form-group">
-				<label>Логин</label>
-				<input name="login" class="form-control" placeholder="Логин" autofocus required>
-			  </div>
-			  <button type="submit" class="btn btn-info">Вход</button>
-			</form>
-		</div>
-	</body>
-</html>
+{% extends '_index.html' %}
+
+{% block title %}Вход на сайт{% endblock %}
+
+{% block mineblock %}
+<div class="login">
+    <h2>Вход на сайт</h2>
+    <form action="/auth" method="post">
+        <label class="input-label">
+            Логин:
+            <input name="login" class="input" placeholder="Логин" autofocus required>
+        </label>
+        <button type="submit" class="button">Войти</button>
+    </form>
+</div>
+{% endblock %}

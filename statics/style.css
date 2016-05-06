@@ -1,39 +1,223 @@
+@import url(https://fonts.googleapis.com/css?family=Roboto:400,700&subset=latin,cyrillic);
 html, body {
-	height: 100%;
+    height: 100%;
 }
-.login-form {
-	max-width: 400px;
-	transform: translate(-50%, -50%);
-	position: relative;
-	top: 50%;
-	left: 50%;
+body {
+    background: #F1F2F4;
+    padding: 0;
+    margin: 0;
+    line-height: 150%;
+    font-family: 'Roboto', sans-serif;
+    font-size: 13px;
+    color: #65686c;
 }
-.movies-list {
-	max-width: 960px;
-	margin: 30px 0 0 30px;
-	background: #f0f0f0;
-	border: 1px solid #d8d8d8;
+a {
+    color: #33567f;
 }
-.movies-list img {
-    max-width: 150px;
+.menu {
+    background: #597DA3;
+    position: fixed;
+    width: 100%;
+    z-index: 99;
 }
-.movies-list.full img {
-    max-width: 300px;
-}
-.menu-list {
-    padding: 10px 30px;
-    background: #f0f0f0;
-    border-bottom: 1px solid #d8d8d8;
-}
-.comment-place {
-    padding: 5px;
-}
-.user-comment {
-    background: #fff;
-    border-bottom: 1px solid #ddd;
-    padding: 15px 5px;
-}
-.user-comment span {
-    font-weight: bold;
+.menu a,
+.menu span {
     display: block;
+    float: left;
+    height: 50px;
+    line-height: 50px;
+    padding: 0 15px;
+    color: #fff;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: 80%;
+    
+}
+.menu a:hover,
+.menu span {
+    background: rgba(75,109,148,.65);
+}
+.menu .right {
+    float: right;
+}
+.wrapper {
+    width: 860px;
+    margin: 0 auto;
+}
+.clear-fix {
+    position: relative;
+}
+.clear-fix:after {
+    content: '';
+    display: block;
+    clear: both;
+}
+.body {
+    padding: 65px 0 15px;
+}
+.body > div > div {
+    box-sizing: border-box;
+    float: left;
+}
+.body > div > .left {
+    width: 70%;
+}
+.body > div > .right {
+    width: 243px;
+    position: fixed;
+    transform: translate(617px);
+}
+.body > div > .right,
+.film-card {
+    background: #fff;
+    box-shadow: 0 0 0 1px #E6E7EB inset;
+    border-radius: 2px;
+    padding: 20px;
+}
+h2 {
+    margin: -19px -19px 20px;
+    background: #FAFBFC;
+    border-bottom: 1px solid #E6E7EB;
+    padding: 15px 20px;
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: 90%;
+}
+.top-films-block {
+    margin: -20px -19px -19px;
+    padding: 10px 0;
+}
+.top-films-block a {
+    display: block;
+    padding: 5px 19px 5px 69px;
+    position: relative;
+    min-height: 40px;
+    text-decoration: none;
+    font-size: 95%;
+}
+.top-films-block a:hover {
+    background: #F5F7FA;
+}
+.top-films-block .film-photo {
+    display: block;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    position: absolute;
+    top: 5px;
+    left: 19px;
+    overflow: hidden;
+}
+.top-films-block .film-photo img {
+    display: block;
+    width: 100%;
+}
+.top-films-block .film-desc {
+    display: block;
+    padding-top: 4px;
+}
+.top-films-block .film-desc span {
+    display: block;
+    line-height: 130%;
+}
+.top-films-block .film-likes {
+    color: #939699;
+}
+.film-card {
+    display: block;
+}
+.film-card:nth-child(n+2){
+    margin-top: 20px;
+}
+.film-card > span {
+    display: block;
+}
+.film-card .film-photo img {
+    display: block;
+    width: 100%;
+}
+.film-card .film-name {
+    margin-bottom: 20px;
+}
+.film-card .film-name a {
+    font-weight: bold;
+    text-decoration: none;
+    color: #42648B;
+}
+.film-card .film-name .likes {
+    float: right;
+    color: #939699;
+}
+.film-card .film-name a:hover {
+    text-decoration: underline;
+}
+.film-card .film-likes {
+    margin-top: 10px;
+}
+.film-comments {
+    padding-top: 20px;
+    border-top: 1px solid #E6E7EB;
+    margin: 20px -19px -19px;
+    padding: 19px;
+}
+.film-comment {
+    color: #333;
+    line-height: 130%;
+    padding: 15px 0;
+    border-bottom: 1px solid #E6E7EB;
+}
+.film-comment:last-of-type{
+    margin-bottom: 20px;
+}
+.film-comment:first-of-type{
+    padding-top: 0;
+}
+.film-comment span {
+    font-weight: bold;
+    color: #42648B;
+    display: block;
+    font-size: 90%;
+}
+.login {
+    background: #fff;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    padding: 19px;
+    border: 1px solid #E6E7EB;
+    border-radius: 2px;
+    width: 400px;
+    transform: translate(-50%, -50%);
+}
+.input {
+    width: 100%;
+    border: 1px solid #D3D9DE;
+    padding: 10px;
+    font-family: inherit;
+    color: inherit;
+    font-size: inherit;
+    box-sizing: border-box;
+    outline: 0;
+}
+.input-label > * {
+    margin-top: 2px;
+}
+.button {
+    display: inline-block;
+    background: @uiColor;
+    color: #fff;
+    cursor: pointer;
+    padding: 11px 30px;
+    border: 0;
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: 80%;
+    background: #6287AE;
+}
+.button:hover {
+    background: #678eb4;
+}
+form .button {
+    margin-top: 10px;
 }

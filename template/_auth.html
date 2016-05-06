@@ -1,0 +1,21 @@
+{% extends '_index.html' %}
+
+{% block menublock %}
+<div class="right">
+    <a href="/films">Фильмы</a>
+    <a href="#">Рекомендации №1</a>
+    <a href="#">Рекомендации №2</a>
+    <a href="/exit">Выход</a>
+</div>
+{% endblock %}
+
+{% block mineblock %}
+<div class="wrapper clear-fix">
+    <div class="left">
+        {% block left %}{% endblock %}
+    </div>
+    <div class="right">
+        {% block right %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

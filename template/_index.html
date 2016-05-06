@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="/style.css">
+        <title>{% block title %}{% endblock %}</title>
+	</head>
+	<body>
+        <div class="menu">
+            <div class="wrapper clear-fix">
+                <span>Рекомендации</span>
+                {% block menublock %}{% endblock %}
+            </div>
+        </div>
+        <div class="body">
+            {% block mineblock %}{% endblock %}
+        </div>
+	</body>
+</html>

@@ -1,33 +1,30 @@
-<!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="UTF-8">
-		<link href="http://yastatic.net/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
-        <link rel="stylesheet" href="/style.css">
-        <title>{{ title }}</title>
-	</head>
-	<body>
-		<div class="movies-list">
-			<table class="table table-striped">
-				<thead>
-					<tr>
-						<td>ID</td>
-						<td>Афиша</td>
-                        <td>Название</td>
-						<td>Категория</td>
-					</tr>
-				</thead>
-				<tbody>
-                    {% for film in data %}
-					<tr>
-						<td>{{ film.id }}</td>
-						<td><img src="{{ film.poster }}"></td>
-                        <td><a href="/films/{{ film.id }}">{{ film.title }}</a></td>
-						<td><a href="#">{{ film.category }}</a></td>
-					</tr>
-                    {% endfor %}
-				</tbody>
-			</table>
-		</div>
-	</body>
-</html>
+{% extends '_auth.html' %}
+
+{% block title %}Фильмы{% endblock %}
+
+{% block left %}
+    {% for film in data %}
+    <span class="film-card">
+        <span class="film-name">
+            <a href="/films/{{ film.id }}">{{ film.title }}</a>
+            <span class="likes">❤10 ★{{ film.rank }}</span>
+        </span>
+        <span class="film-photo">
+            <a href="/films/{{ film.id }}"><img src="{{ film.poster }}"></a>
+        </span>
+    </span>
+    {% endfor %}
+{% endblock %}
+
+{% block right %}
+    <h2>TOP 10 фильмов</h2>
+    <div class="top-films-block">
+        <a href="#">
+            <span class="film-photo"><img src="http://st-im.kinopoisk.ru/im/poster/1/4/7/kinopoisk.ru-The-Shawshank-Redemption-1479180.jpg"></span>
+            <span class="film-desc">
+                <span class="film-name">Хардкор</span>
+                <span class="film-likes">Мне нравится ❤ 10</span>
+            </span>
+        </a>
+    </div>
+{% endblock %}

@@ -1,54 +1,53 @@
-<!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="UTF-8">
-		<link href="http://yastatic.net/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
-        <link rel="stylesheet" href="/style.css">
-        <title>{{ title }}</title>
-	</head>
-	<body>
-		<div class="movies-list full">
-            <a class="btn btn-default" href="/films">Назад к фильмам</a>
-			<table class="table table-striped">
-				<tbody>
-					<tr>
-                        <td><img src="{{ data.poster }}"></td>
-						<td>
-                            ID: {{ data.id }}<br>
-                            Название: {{ data.title }}<br>
-                            <form action="/like" method="post">
-                              <input type="hidden" name="movie" value="{{ data.id }}">
-                              {% if !data.has_like %}
-                              <button type="submit" class="btn btn-primary">Мне нравится</button>
-                              {% else %}
-                              <span class="btn btn-default">Вы оценили</span>
-                              {% endif %}
-                            </form>
-                        </td>
-					</tr>
-				</tbody>
-			</table>
-            <div class="comment-place">
-                <label>Комментарии:</label>
-                {% if data.comments %}
-                    {% for comment in data.comments %}
-                    <div class="user-comment">
-                        <span>{{ comment.name }}:</span>
-                        {{ comment.text }}
-                    </div>
-                    {% endfor %}
-                {% else %}
-                <div class="user-comment">Вы будете первым, кто оставит комментарий...</div>
-                {% endif %}
+{% extends '_auth.html' %}
+
+{% block title %}{{ title }} {{ movie.title }}{% endblock %}
+
+{% block left %}
+    <div class="film-card">
+        <span class="film-name">
+            {{ movie.title }}
+            <span class="likes">❤10 ★{{ movie.rank }}</span>
+        </span>
+        <span class="film-photo"><img src="{{ movie.poster }}"></span>
+        <div class="film-action">
+            <div class="film-likes">
+                <form action="/like" method="post">
+                  <input type="hidden" name="movie" value="{{ movie.id }}">
+                  {% if !movie.has_like %}
+                  <button type="submit" class="button">+1 ❤</button>
+                  {% else %}
+                  <button type="submit" class="button">-1 ❤</button>
+                  {% endif %}
+                </form>
             </div>
-            <form class="comment-place" action="/comment" method="post">
-                <input type="hidden" name="movie" value="{{ data.id }}">
-                <div class="form-group">
-                    <label>Ваш комментарий</label>
-                    <textarea name="comment" class="form-control" rows="4" placeholder="Ваш комментарий" required></textarea>
+            <div class="film-comments">
+                {% for comment in comments %}
+                <div class="film-comment">
+                    <span>{{ comment.name }}</span>
+                    {{ comment.text }}
                 </div>
-                <button type="submit" class="btn btn-info">Комментировать</button>
-			</form>
-		</div>
-	</body>
-</html>
+                {% endfor %}
+                <form class="comment-place" action="/comment" method="post">
+                    <input type="hidden" name="movie" value="{{ movie.id }}">
+                    <textarea name="comment" class="input" rows="4" placeholder="Что вы думаете?" required></textarea>
+                    <button type="submit" class="button">Комментировать</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block right %}
+    <h2>Похожие фильмы</h2>
+    <div class="top-films-block">
+        {% for film in near %}
+        <a href="/films/{{ film.id }}">
+            <span class="film-photo"><img src="{{ film.poster }}"></span>
+            <span class="film-desc">
+                <span class="film-name">{{ film.title }}</span>
+                <span class="film-likes">Подробнее...</span>
+            </span>
+        </a>
+        {% endfor %}
+    </div>
+{% endblock %}
