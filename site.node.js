@@ -23,10 +23,14 @@ var Actions = {
             path: '/films',
             template: './template/films.html',
             callback: function(page, resource){
-                SQL.Query('SELECT * FROM movie', function(data){
-                    resource.send(page({
-                        'data': data
-                    }));
+                SQL.Query('SELECT m.id, m.title, m.poster, m.rank, SUM(1) as likes FROM movie m LEFT JOIN likes l ON m.id = l.movie_id GROUP BY (m.id) ORDER BY m.id', function(data){
+                    SQL.Query('SELECT m.id, m.title, m.poster, m.rank, COUNT(l) as likes FROM likes l JOIN movie m ON l.movie_id = m.id GROUP BY (m.id) ORDER BY likes DESC LIMIT 10', function(dataTop){
+                    
+                        resource.send(page({
+                            'data': data,
+                            'top': dataTop
+                        }));
+                    });
                 });
             }
         },

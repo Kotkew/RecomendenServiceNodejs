@@ -7,7 +7,7 @@
     <span class="film-card">
         <span class="film-name">
             <a href="/films/{{ film.id }}">{{ film.title }}</a>
-            <span class="likes">❤10 ★{{ film.rank }}</span>
+            <span class="likes">❤{{ film.likes }} ★{{ film.rank }}</span>
         </span>
         <span class="film-photo">
             <a href="/films/{{ film.id }}"><img src="{{ film.poster }}"></a>
@@ -19,12 +19,14 @@
 {% block right %}
     <h2>TOP 10 фильмов</h2>
     <div class="top-films-block">
-        <a href="#">
-            <span class="film-photo"><img src="http://st-im.kinopoisk.ru/im/poster/1/4/7/kinopoisk.ru-The-Shawshank-Redemption-1479180.jpg"></span>
+        {% for film in top %}
+        <a href="/films/{{ film.id }}">
+            <span class="film-photo"><img src="{{ film.poster }}"></span>
             <span class="film-desc">
-                <span class="film-name">Хардкор</span>
-                <span class="film-likes">Мне нравится ❤ 10</span>
+                <span class="film-name">{{ film.title }}</span>
+                <span class="film-likes">❤{{ film.likes }} ★{{ film.rank }}</span>
             </span>
         </a>
+        {% endfor %}
     </div>
 {% endblock %}
