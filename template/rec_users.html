@@ -1,0 +1,21 @@
+{% extends '_recommendations.html' %}
+
+{% block title %}Похожие пользователи{% endblock %}
+
+{% block recblock %}
+<h2>Похожие пользователи</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <td>Пользователь</td>
+            <td>Дистанция L2</td>
+        </tr>
+    </thead>
+    {% for item in data %}
+    <tr>
+        <td>{{ item.name }}</td>
+        <td>{{ item.distance }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

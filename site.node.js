@@ -23,7 +23,7 @@ var Actions = {
             path: '/films',
             template: './template/films.html',
             callback: function(page, resource){
-                SQL.Query('SELECT m.id, m.title, m.poster, m.rank, SUM(1) as likes FROM movie m LEFT JOIN likes l ON m.id = l.movie_id GROUP BY (m.id) ORDER BY m.id', function(data){
+                SQL.Query('SELECT m.id, m.title, m.poster, m.rank, ARRAY_AGG(l.user_id) as likes FROM movie m LEFT JOIN likes l ON m.id = l.movie_id GROUP BY (m.id) ORDER BY m.id', function(data){                     
                     SQL.Query('SELECT m.id, m.title, m.poster, m.rank, COUNT(l) as likes FROM likes l JOIN movie m ON l.movie_id = m.id GROUP BY (m.id) ORDER BY likes DESC LIMIT 10', function(dataTop){
                     
                         resource.send(page({
@@ -38,7 +38,10 @@ var Actions = {
             path: '/films/:film_id',
             template: './template/film.html',
             callback: function(page, resource, request){
-                SQL.Query('SELECT *, (SELECT 1 FROM likes WHERE user_id = ' + request.cookies.id + ' AND movie_id = ' + request.params.film_id + ') AS has_like FROM movie WHERE id = ' + request.params.film_id, function(data){
+                //SELECT m.id, m.title, m.poster, m.rank, ARRAY_AGG(l.user_id), ARRAY_AGG(c.text) FROM movie m LEFT JOIN likes l ON m.id = l.movie_id LEFT JOIN comment c ON m.id = c.movie_id WHERE m.id = 1 GROUP BY (m.id)
+                
+                SQL.Query('SELECT m.id, m.title, m.poster, m.rank, m.year, ARRAY_AGG(l.user_id) as likes FROM movie m LEFT JOIN likes l ON m.id = l.movie_id WHERE m.id = ' + request.params.film_id + ' GROUP BY (m.id) ORDER BY m.id', function(data){
+                    
                     SQL.Query('SELECT t1.text, t2.name FROM comment t1 JOIN users t2 ON t1.user_id = t2.id WHERE t1.movie_id = ' + request.params.film_id + ' ORDER BY t1.id', function(dataComments){
                         SQL.Query('SELECT * FROM movie WHERE rank BETWEEN ' + data[0].rank + ' - 0.5 AND ' + data[0].rank + ' + 0.5 AND year BETWEEN ' + data[0].year + ' - 3 AND ' + data[0].year + ' + 3 AND id <> ' + data[0].id, function(dataSame){
 
@@ -50,6 +53,90 @@ var Actions = {
                             
                         });
                     });
+                });
+            }
+        },
+        {
+            path: '/recommendations/users',
+            template: './template/rec_users.html',
+            callback: function(page, resource, request){
+                SQL.Query('SELECT u.name, u.id, ARRAY_AGG(l.movie_id) as likes FROM likes l LEFT JOIN users u ON l.user_id = u.id GROUP BY (u.name, u.id)', function(users){
+                    
+                    var source,
+                        result = [];
+                    
+                    for (var i = 0, l = users.length; i < l; i++)
+                    {
+                        if(users[i].id == request.cookies.id)
+                        {
+                            source = users[i].likes;
+                            break;
+                        }
+                    }
+                    
+                    for (var i = 0, l = users.length; i < l; i++)
+                    {
+                        result[i] = {
+                            name: users[i].name,
+                            distance: getDistance(source, users[i].likes)
+                        };
+                    }
+                    
+                    result.sort(function(a, b){ return a.distance - b.distance; });
+                    resource.send(page({
+                        'data': result
+                    }));
+                    
+                    function getDistance(a, b) {
+                        var first = a.filter(function(i) { return b.indexOf(i) < 0; });
+                        var last  = b.filter(function(i) { return a.indexOf(i) < 0; });
+                        
+                        return first.concat(last).length;
+                    };
+                });
+            }
+        },
+        {
+            path: '/recommendations/films/:film_id',
+            template: './template/rec_films.html',
+            callback: function(page, resource, request){
+                SQL.Query('SELECT m.title, l.movie_id, ARRAY_AGG(l.user_id) as likes FROM likes l LEFT JOIN movie m ON l.movie_id = m.id GROUP BY (l.movie_id, m.title)', function(likes){
+                    
+                    var source,
+                        result = [];
+                    
+                    for (var i = 0, l = likes.length; i < l; i++)
+                    {
+                        if(likes[i].movie_id == request.params.film_id)
+                        {
+                            source = likes[i].likes;
+                            break;
+                        }
+                    }
+                    
+                    if(!source)
+                        throw new Error('Такого фильма не существует');
+                    
+                    for (var i = 0, l = likes.length; i < l; i++)
+                    {
+                        result[i] = {
+                            id: likes[i].movie_id,
+                            name: likes[i].title,
+                            distance: getDistance(source, likes[i].likes)
+                        };
+                    }
+                    
+                    result.sort(function(a, b){ return a.distance - b.distance; });
+                    resource.send(page({
+                        'data': result
+                    }));
+                    
+                    function getDistance(a, b) {
+                        var first = a.filter(function(i) { return b.indexOf(i) < 0; });
+                        var last  = b.filter(function(i) { return a.indexOf(i) < 0; });
+                        
+                        return first.concat(last).length;
+                    };
                 });
             }
         }
@@ -80,8 +167,9 @@ var Actions = {
                 resource.redirect('/');
                 
                 function createCookie(id){
-                    resource.cookie('id', id, { maxAge: 900000 });
-                    resource.cookie('login', body.login, { maxAge: 900000 });
+                    var cookieAge = 1000 * 60 * 600;
+                    resource.cookie('id', id, { maxAge: cookieAge });
+                    resource.cookie('login', body.login, { maxAge: cookieAge });
                     resource.redirect('/films');
                 }
             }
@@ -89,13 +177,9 @@ var Actions = {
         {
             path: '/like',
             callback: function(body, resource, request){
-                SQL.Query('SELECT 1 FROM likes WHERE user_id = ' + request.cookies.id + ' AND movie_id = ' + body.movie + ' LIMIT 1', function(data){
-                    if(!data.length){
-                        SQL.Query('INSERT INTO likes (user_id, movie_id) VALUES (' + request.cookies.id + ', ' + body.movie + ')');
-                        return;
-                    }
-                    
-                    SQL.Query('DELETE FROM likes WHERE user_id = ' + request.cookies.id + ' AND movie_id = ' + body.movie);
+                SQL.Query('INSERT INTO likes (user_id, movie_id) VALUES (' + request.cookies.id + ', ' + body.movie + ') ON CONFLICT DO NOTHING RETURNING 1', function(data){
+                    if(!data.length)
+                        SQL.Query('DELETE FROM likes WHERE user_id = ' + request.cookies.id + ' AND movie_id = ' + body.movie);
                 });
                 
                 resource.redirect(request.get('referer'));

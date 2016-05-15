@@ -1,0 +1,13 @@
+{% extends '_auth.html' %}
+
+{% block left %}
+<div class="film-card">
+    {% block recblock %}{% endblock %}
+</div>
+{% endblock %}
+
+{% block right %}
+    <h2>Рекомендации</h2>
+    <a href="/recommendations/users">Похожие пользователи</a><br>
+    <a href="/recommendations/films/1">Похожие фильмы</a>
+{% endblock %}

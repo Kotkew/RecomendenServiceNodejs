@@ -1,0 +1,27 @@
+{% extends '_recommendations.html' %}
+
+{% block title %}Похожие фильмы{% endblock %}
+
+{% block recblock %}
+<h2>Похожие фильмы</h2>
+<form class="search clear-fix" onsubmit="location.href = '/recommendations/films/' + this.querySelector('input').value; return false;">
+    <input class="input" placeholder="Введите ID фильма">
+    <button type="submit" class="button">Продолжить</button>
+</form>
+<table class="table">
+    <thead>
+        <tr>
+            <td>ID</td>
+            <td>Фильм</td>
+            <td>Дистанция L2</td>
+        </tr>
+    </thead>
+    {% for item in data %}
+    <tr>
+        <td>{{ item.id }}</td>
+        <td><a href="/films/{{ item.id }}">{{ item.name }}</a></td>
+        <td>{{ item.distance }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

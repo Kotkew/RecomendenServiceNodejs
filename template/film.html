@@ -1,6 +1,6 @@
 {% extends '_auth.html' %}
 
-{% block title %}{{ title }} {{ movie.title }}{% endblock %}
+{% block title %}{{ movie.title }}{% endblock %}
 
 {% block left %}
     <div class="film-card">
@@ -13,11 +13,8 @@
             <div class="film-likes">
                 <form action="/like" method="post">
                   <input type="hidden" name="movie" value="{{ movie.id }}">
-                  {% if !movie.has_like %}
-                  <button type="submit" class="button">+1 ❤</button>
-                  {% else %}
-                  <button type="submit" class="button">-1 ❤</button>
-                  {% endif %}
+                  <span onclick="this.parentNode.submit();" class="like-button has-like">Мне нравится <span>❤ {{ movie.likes.length }}</span></span>
+                  | <a class="like-button has-like" href="/recommendations/films/{{ movie.id }}">Другие фильмы, похожие на этот</a>
                 </form>
             </div>
             <div class="film-comments">
