@@ -67,12 +67,15 @@ var Actions = {
                     
                     for (var i = 0, l = users.length; i < l; i++)
                     {
+                        //console.log(users[i].id + ' ' +  request.cookies.id);
                         if(users[i].id == request.cookies.id)
                         {
                             source = users[i].likes;
                             break;
                         }
                     }
+                    
+                    //console.log(JSON.stringify(source));
                     
                     for (var i = 0, l = users.length; i < l; i++)
                     {
@@ -138,6 +141,54 @@ var Actions = {
                         return first.concat(last).length;
                     };
                 });
+            }
+        },
+        {
+            path: '/recommendations_update',
+            template: './template/rec_films.html',
+            callback: function(page, resource, request){
+                SQL.Query('TRUNCATE TABLE user_distance', function(users){
+                    SQL.Query('SELECT u.id, ARRAY_AGG(l.movie_id) as likes FROM likes l LEFT JOIN users u ON l.user_id = u.id GROUP BY (u.id)', function(users){
+                        
+                        var result = []
+                            count = 0;
+                        
+                        for (var i = 0, l = users.length; i < l; i++)
+                        {
+                            for (var _i = 0, _l = users.length; _i < l; _i++)
+                            {
+                                var analyze = getDistance(users[i].likes, users[_i].likes);
+                                
+                                result[count] = {
+                                    from: users[i].id,
+                                    to: users[_i].id,
+                                    l1: analyze[0],
+                                    same_likes: analyze[1]
+                                };
+                                
+                                count++;
+                            }
+                        }
+                        
+                        var sql = [];
+                        for(var i = 0, l = result.length; i < l; i++)
+                            sql[i] = '(' + result[i].from + ', ' + result[i].to + ', ' + result[i].l1 + ', ' + result[i].same_likes + ')';
+                            
+                        var res = 'INSERT INTO user_distance VALUES ' + sql.join();
+                        
+                        resource.send(res);
+                    });
+                });
+                
+                function getDistance(a, b) {
+                    var first = a.filter(function(i) { return b.indexOf(i) < 0; });
+                    var last  = b.filter(function(i) { return a.indexOf(i) < 0; });
+                    
+                    var diff = first.length + last.length;
+                    var same = a.length + b.length - diff;
+                    
+                    return [diff, same];
+                }
             }
         }
     ],
