@@ -8,13 +8,15 @@
     <thead>
         <tr>
             <td>Пользователь</td>
-            <td>Дистанция L2</td>
+            <td>Дистанция L1</td>
+            <td>Общие лайки</td>
         </tr>
     </thead>
     {% for item in data %}
     <tr>
         <td>{{ item.name }}</td>
-        <td>{{ item.distance }}</td>
+        <td>{{ item.l1 }}</td>
+        <td>{{ item.same_likes }}</td>
     </tr>
     {% endfor %}
 </table>

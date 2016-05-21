@@ -10,6 +10,25 @@
         </span>
         <span class="film-photo"><img src="{{ movie.poster }}"></span>
         <div class="film-action">
+            <div class="film-likes stars">
+                <form name="rating_form" action="/rating" method="post">
+                    <input type="hidden" name="movie" value="{{ movie.id }}">
+                    <input type="hidden" name="rating" value="{{ movie.rating }}">
+                    Оцените фильм по шкале от 1 до 10:
+                    <div id="stars-list" class="stars-list">
+                        <span>★</span>
+                        <span>★</span>
+                        <span>★</span>
+                        <span>★</span>
+                        <span>★</span>
+                        <span>★</span>
+                        <span>★</span>
+                        <span>★</span>
+                        <span>★</span>
+                        <span>★</span>
+                    </div>
+                </form>
+            </div>
             <div class="film-likes">
                 <form action="/like" method="post">
                   <input type="hidden" name="movie" value="{{ movie.id }}">
@@ -32,6 +51,43 @@
             </div>
         </div>
     </div>
+    <script>
+        document.querySelector('#stars-list').onclick = function(e){
+            if(e.target.tagName == 'SPAN') {
+                var childrens = this.children;
+                    
+                for(var i = 0; i < childrens.length; i++) {
+                    if(childrens[i] == e.target){
+                        document.querySelector('[name=rating]').value = i + 1;
+                    }
+                }
+                
+                document.forms.rating_form.submit();
+            }
+        }
+        
+        renderStars();
+        
+        function renderStars(){
+            var status = true,
+                childrens = document.querySelector('#stars-list').children,
+                index = document.querySelector('[name=rating]').value;
+            
+            if(!index)
+                return;
+                
+            for(var i = 0; i < childrens.length; i++) {
+                if(status)
+                    childrens[i].classList.add('stared');
+                else
+                    childrens[i].classList.remove('stared');
+            
+                if(i+1 == index){
+                    status = false;
+                }
+            }
+        }
+    </script>
 {% endblock %}
 
 {% block right %}

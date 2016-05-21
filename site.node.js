@@ -40,7 +40,7 @@ var Actions = {
             callback: function(page, resource, request){
                 //SELECT m.id, m.title, m.poster, m.rank, ARRAY_AGG(l.user_id), ARRAY_AGG(c.text) FROM movie m LEFT JOIN likes l ON m.id = l.movie_id LEFT JOIN comment c ON m.id = c.movie_id WHERE m.id = 1 GROUP BY (m.id)
                 
-                SQL.Query('SELECT m.id, m.title, m.poster, m.rank, m.year, ARRAY_AGG(l.user_id) as likes FROM movie m LEFT JOIN likes l ON m.id = l.movie_id WHERE m.id = ' + request.params.film_id + ' GROUP BY (m.id) ORDER BY m.id', function(data){
+                SQL.Query('SELECT m.id, m.title, m.poster, m.rank, m.year, ARRAY_AGG(l.user_id) as likes, r.rating FROM movie m LEFT JOIN likes l ON m.id = l.movie_id LEFT JOIN ratings r ON m.id = r.movie_id WHERE m.id = ' + request.params.film_id + ' GROUP BY (m.id, r.rating)', function(data){
                     
                     SQL.Query('SELECT t1.text, t2.name FROM comment t1 JOIN users t2 ON t1.user_id = t2.id WHERE t1.movie_id = ' + request.params.film_id + ' ORDER BY t1.id', function(dataComments){
                         SQL.Query('SELECT * FROM movie WHERE rank BETWEEN ' + data[0].rank + ' - 0.5 AND ' + data[0].rank + ' + 0.5 AND year BETWEEN ' + data[0].year + ' - 3 AND ' + data[0].year + ' + 3 AND id <> ' + data[0].id, function(dataSame){
@@ -60,42 +60,10 @@ var Actions = {
             path: '/recommendations/users',
             template: './template/rec_users.html',
             callback: function(page, resource, request){
-                SQL.Query('SELECT u.name, u.id, ARRAY_AGG(l.movie_id) as likes FROM likes l LEFT JOIN users u ON l.user_id = u.id GROUP BY (u.name, u.id)', function(users){
-                    
-                    var source,
-                        result = [];
-                    
-                    for (var i = 0, l = users.length; i < l; i++)
-                    {
-                        //console.log(users[i].id + ' ' +  request.cookies.id);
-                        if(users[i].id == request.cookies.id)
-                        {
-                            source = users[i].likes;
-                            break;
-                        }
-                    }
-                    
-                    //console.log(JSON.stringify(source));
-                    
-                    for (var i = 0, l = users.length; i < l; i++)
-                    {
-                        result[i] = {
-                            name: users[i].name,
-                            distance: getDistance(source, users[i].likes)
-                        };
-                    }
-                    
-                    result.sort(function(a, b){ return a.distance - b.distance; });
+                SQL.Query('SELECT u.name, ud.l1, ud.same_likes FROM user_distance ud LEFT JOIN users u ON ud.to_id = u.id WHERE ud.from_id = ' +  request.cookies.id + ' ORDER BY ud.l1', function(data){
                     resource.send(page({
-                        'data': result
+                        'data': data
                     }));
-                    
-                    function getDistance(a, b) {
-                        var first = a.filter(function(i) { return b.indexOf(i) < 0; });
-                        var last  = b.filter(function(i) { return a.indexOf(i) < 0; });
-                        
-                        return first.concat(last).length;
-                    };
                 });
             }
         },
@@ -103,43 +71,10 @@ var Actions = {
             path: '/recommendations/films/:film_id',
             template: './template/rec_films.html',
             callback: function(page, resource, request){
-                SQL.Query('SELECT m.title, l.movie_id, ARRAY_AGG(l.user_id) as likes FROM likes l LEFT JOIN movie m ON l.movie_id = m.id GROUP BY (l.movie_id, m.title)', function(likes){
-                    
-                    var source,
-                        result = [];
-                    
-                    for (var i = 0, l = likes.length; i < l; i++)
-                    {
-                        if(likes[i].movie_id == request.params.film_id)
-                        {
-                            source = likes[i].likes;
-                            break;
-                        }
-                    }
-                    
-                    if(!source)
-                        throw new Error('Такого фильма не существует');
-                    
-                    for (var i = 0, l = likes.length; i < l; i++)
-                    {
-                        result[i] = {
-                            id: likes[i].movie_id,
-                            name: likes[i].title,
-                            distance: getDistance(source, likes[i].likes)
-                        };
-                    }
-                    
-                    result.sort(function(a, b){ return a.distance - b.distance; });
+                SQL.Query('SELECT fd.to_id, fd.l1, fd.same_likes, m.title FROM film_distance fd LEFT JOIN movie m ON fd.to_id = m.id WHERE from_id = ' + request.params.film_id + ' ORDER BY fd.l1', function(data){
                     resource.send(page({
-                        'data': result
+                        'data': data
                     }));
-                    
-                    function getDistance(a, b) {
-                        var first = a.filter(function(i) { return b.indexOf(i) < 0; });
-                        var last  = b.filter(function(i) { return a.indexOf(i) < 0; });
-                        
-                        return first.concat(last).length;
-                    };
                 });
             }
         },
@@ -147,40 +82,51 @@ var Actions = {
             path: '/recommendations_update',
             template: './template/rec_films.html',
             callback: function(page, resource, request){
-                SQL.Query('TRUNCATE TABLE user_distance', function(users){
+                SQL.Query('TRUNCATE TABLE user_distance', function(){
                     SQL.Query('SELECT u.id, ARRAY_AGG(l.movie_id) as likes FROM likes l LEFT JOIN users u ON l.user_id = u.id GROUP BY (u.id)', function(users){
-                        
-                        var result = []
-                            count = 0;
-                        
-                        for (var i = 0, l = users.length; i < l; i++)
-                        {
-                            for (var _i = 0, _l = users.length; _i < l; _i++)
-                            {
-                                var analyze = getDistance(users[i].likes, users[_i].likes);
-                                
-                                result[count] = {
-                                    from: users[i].id,
-                                    to: users[_i].id,
-                                    l1: analyze[0],
-                                    same_likes: analyze[1]
-                                };
-                                
-                                count++;
-                            }
-                        }
-                        
-                        var sql = [];
-                        for(var i = 0, l = result.length; i < l; i++)
-                            sql[i] = '(' + result[i].from + ', ' + result[i].to + ', ' + result[i].l1 + ', ' + result[i].same_likes + ')';
-                            
-                        var res = 'INSERT INTO user_distance VALUES ' + sql.join();
-                        
-                        resource.send(res);
+                        SQL.Query('INSERT INTO user_distance VALUES ' + analyzeRecords(users));
                     });
                 });
                 
-                function getDistance(a, b) {
+                SQL.Query('TRUNCATE TABLE film_distance', function(){
+                    SQL.Query('SELECT l.movie_id as id, ARRAY_AGG(l.user_id) as likes FROM likes l LEFT JOIN movie m ON l.movie_id = m.id GROUP BY (l.movie_id)', function(likes){
+                        SQL.Query('INSERT INTO film_distance VALUES ' + analyzeRecords(likes));
+                    });
+                });
+                
+                resource.send('user_distance and film_distance updated!');
+                
+                function analyzeRecords(data)
+                {
+                    var result = []
+                        count = 0;
+                    
+                    for (var i = 0, l = data.length; i < l; i++)
+                    {
+                        for (var _i = 0, _l = data.length; _i < l; _i++)
+                        {
+                            var analyze = getDistance(data[i].likes, data[_i].likes);
+                            
+                            result[count] = {
+                                from: data[i].id,
+                                to: data[_i].id,
+                                l1: analyze[0],
+                                same_likes: analyze[1]
+                            };
+                            
+                            count++;
+                        }
+                    }
+                    
+                    var sql = [];
+                    for(var i = 0, l = result.length; i < l; i++)
+                        sql[i] = '(' + result[i].from + ', ' + result[i].to + ', ' + result[i].l1 + ', ' + result[i].same_likes + ')';
+                    
+                    return sql;
+                }
+                
+                function getDistance(a, b)
+                {
                     var first = a.filter(function(i) { return b.indexOf(i) < 0; });
                     var last  = b.filter(function(i) { return a.indexOf(i) < 0; });
                     
@@ -240,6 +186,13 @@ var Actions = {
             path: '/comment',
             callback: function(body, resource, request){
                 SQL.Query('INSERT INTO comment (user_id, movie_id, text) VALUES (' + request.cookies.id + ', ' + body.movie + ', \'' + body.comment + '\')');
+                resource.redirect(request.get('referer'));
+            }
+        },
+        {
+            path: '/rating',
+            callback: function(body, resource, request){
+                SQL.Query('INSERT INTO ratings (user_id, movie_id, rating) VALUES (' + request.cookies.id + ', ' + body.movie + ', ' + body.rating + ') ON CONFLICT (user_id, movie_id) DO UPDATE SET rating = ' + body.rating);
                 resource.redirect(request.get('referer'));
             }
         }

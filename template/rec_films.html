@@ -13,14 +13,16 @@
         <tr>
             <td>ID</td>
             <td>Фильм</td>
-            <td>Дистанция L2</td>
+            <td>Дистанция L1</td>
+            <td>Сходство в лайках</td>
         </tr>
     </thead>
     {% for item in data %}
     <tr>
-        <td>{{ item.id }}</td>
-        <td><a href="/films/{{ item.id }}">{{ item.name }}</a></td>
-        <td>{{ item.distance }}</td>
+        <td>{{ item.to_id }}</td>
+        <td><a href="/films/{{ item.to_id }}">{{ item.title }}</a></td>
+        <td>{{ item.l1 }}</td>
+        <td>{{ item.same_likes }}</td>
     </tr>
     {% endfor %}
 </table>

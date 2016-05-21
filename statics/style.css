@@ -157,6 +157,18 @@ h2 {
     margin-top: 20px;
     padding-top: 10px;
 }
+.film-card .film-likes.stars {
+    margin-bottom: -10px;
+}
+.stars-list {
+    font-size: 130%;
+}
+.stars-list span {
+    cursor: pointer;
+}
+.stars-list span.stared {
+    color: #6D8EB2;
+}
 .film-comments {
     padding-top: 20px;
     border-top: 1px solid #E6E7EB;
