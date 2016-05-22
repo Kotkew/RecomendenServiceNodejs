@@ -1,10 +1,10 @@
 {% extends '_recommendations.html' %}
 
-{% block title %}Похожие фильмы{% endblock %}
+{% block title %}Похожие фильмы по рейтингу{% endblock %}
 
 {% block recblock %}
-<h2>Похожие фильмы</h2>
-<form class="search clear-fix" onsubmit="location.href = '/recommendations/films/' + this.querySelector('input').value; return false;">
+<h2>Похожие фильмы по рейтингу</h2>
+<form class="search clear-fix" onsubmit="location.href = '/recommendations/films_by_rating/' + this.querySelector('input').value; return false;">
     <input class="input" placeholder="Введите ID фильма">
     <button type="submit" class="button">Продолжить</button>
 </form>
@@ -15,8 +15,6 @@
             <td>Фильм</td>
             <td>Дистанция L1</td>
             <td>Дистанция L2</td>
-            <td>Сходство в лайках</td>
-            <td>Ж</td>
         </tr>
     </thead>
     {% for item in data %}
@@ -25,8 +23,6 @@
         <td><a href="/films/{{ item.to_id }}">{{ item.title }}</a></td>
         <td>{{ item.l1 }}</td>
         <td>{{ item.l2 }}</td>
-        <td>{{ item.same_likes }}</td>
-        <td>{{ item.g }}</td>
     </tr>
     {% endfor %}
 </table>

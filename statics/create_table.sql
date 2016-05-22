@@ -28,23 +28,41 @@ CREATE TABLE likes (
     PRIMARY KEY(movie_id, user_id)
 );
 
-CREATE TABLE user_distance (
-    from_id integer NOT NULL REFERENCES users(id),
-    to_id integer NOT NULL REFERENCES users(id),
-    l1 integer,
-    same_likes integer
-);
-
-CREATE TABLE film_distance (
-    from_id integer NOT NULL REFERENCES movie(id),
-    to_id integer NOT NULL REFERENCES movie(id),
-    l1 integer,
-    same_likes integer
-);
-
 CREATE TABLE ratings (
     user_id integer NOT NULL REFERENCES users(id),
     movie_id integer NOT NULL REFERENCES movie(id),
     rating integer,
     PRIMARY KEY(movie_id, user_id)
+);
+
+CREATE TABLE like_user_distance (
+    from_id integer NOT NULL REFERENCES users(id),
+    to_id integer NOT NULL REFERENCES users(id),
+    l1 integer,
+    l2 real,
+    g real,
+    same_likes integer
+);
+
+CREATE TABLE like_film_distance (
+    from_id integer NOT NULL REFERENCES movie(id),
+    to_id integer NOT NULL REFERENCES movie(id),
+    l1 integer,
+    l2 real,
+    g real,
+    same_likes integer
+);
+
+CREATE TABLE rating_user_distance (
+    from_id integer NOT NULL REFERENCES users(id),
+    to_id integer NOT NULL REFERENCES users(id),
+    l1 integer,
+    l2 real
+);
+
+CREATE TABLE rating_film_distance (
+    from_id integer NOT NULL REFERENCES movie(id),
+    to_id integer NOT NULL REFERENCES movie(id),
+    l1 integer,
+    l2 real
 );

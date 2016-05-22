@@ -40,6 +40,7 @@ var Actions = {
             callback: function(page, resource, request){
                 //SELECT m.id, m.title, m.poster, m.rank, ARRAY_AGG(l.user_id), ARRAY_AGG(c.text) FROM movie m LEFT JOIN likes l ON m.id = l.movie_id LEFT JOIN comment c ON m.id = c.movie_id WHERE m.id = 1 GROUP BY (m.id)
                 
+                //Возвращает несколько записей
                 SQL.Query('SELECT m.id, m.title, m.poster, m.rank, m.year, ARRAY_AGG(l.user_id) as likes, r.rating FROM movie m LEFT JOIN likes l ON m.id = l.movie_id LEFT JOIN ratings r ON m.id = r.movie_id WHERE m.id = ' + request.params.film_id + ' GROUP BY (m.id, r.rating)', function(data){
                     
                     SQL.Query('SELECT t1.text, t2.name FROM comment t1 JOIN users t2 ON t1.user_id = t2.id WHERE t1.movie_id = ' + request.params.film_id + ' ORDER BY t1.id', function(dataComments){
@@ -60,7 +61,7 @@ var Actions = {
             path: '/recommendations/users',
             template: './template/rec_users.html',
             callback: function(page, resource, request){
-                SQL.Query('SELECT u.name, ud.l1, ud.same_likes FROM user_distance ud LEFT JOIN users u ON ud.to_id = u.id WHERE ud.from_id = ' +  request.cookies.id + ' ORDER BY ud.l1', function(data){
+                SQL.Query('SELECT u.name, ud.l1, ud.l2, ud.same_likes, ud.g FROM like_user_distance ud LEFT JOIN users u ON ud.to_id = u.id WHERE ud.from_id = ' +  request.cookies.id + ' ORDER BY ud.l2', function(data){
                     resource.send(page({
                         'data': data
                     }));
@@ -71,7 +72,29 @@ var Actions = {
             path: '/recommendations/films/:film_id',
             template: './template/rec_films.html',
             callback: function(page, resource, request){
-                SQL.Query('SELECT fd.to_id, fd.l1, fd.same_likes, m.title FROM film_distance fd LEFT JOIN movie m ON fd.to_id = m.id WHERE from_id = ' + request.params.film_id + ' ORDER BY fd.l1', function(data){
+                SQL.Query('SELECT fd.to_id, fd.l1, fd.l2, fd.same_likes, fd.g, m.title FROM like_film_distance fd LEFT JOIN movie m ON fd.to_id = m.id WHERE from_id = ' + request.params.film_id + ' ORDER BY fd.l2', function(data){
+                    resource.send(page({
+                        'data': data
+                    }));
+                });
+            }
+        },
+        {
+            path: '/recommendations/users_by_rating',
+            template: './template/rec_users_r.html',
+            callback: function(page, resource, request){
+                SQL.Query('SELECT u.name, ud.l1, ud.l2 FROM rating_user_distance ud LEFT JOIN users u ON ud.to_id = u.id WHERE ud.from_id = ' +  request.cookies.id + ' ORDER BY ud.l2', function(data){
+                    resource.send(page({
+                        'data': data
+                    }));
+                });
+            }
+        },
+        {
+            path: '/recommendations/films_by_rating/:film_id',
+            template: './template/rec_films_r.html',
+            callback: function(page, resource, request){
+                SQL.Query('SELECT fd.to_id, fd.l1, fd.l2, m.title FROM rating_film_distance fd LEFT JOIN movie m ON fd.to_id = m.id WHERE from_id = ' + request.params.film_id + ' ORDER BY fd.l2', function(data){
                     resource.send(page({
                         'data': data
                     }));
@@ -82,21 +105,33 @@ var Actions = {
             path: '/recommendations_update',
             template: './template/rec_films.html',
             callback: function(page, resource, request){
-                SQL.Query('TRUNCATE TABLE user_distance', function(){
+                SQL.Query('TRUNCATE TABLE like_user_distance', function(){
                     SQL.Query('SELECT u.id, ARRAY_AGG(l.movie_id) as likes FROM likes l LEFT JOIN users u ON l.user_id = u.id GROUP BY (u.id)', function(users){
-                        SQL.Query('INSERT INTO user_distance VALUES ' + analyzeRecords(users));
+                        SQL.Query('INSERT INTO like_user_distance VALUES ' + analyzeLikes(users));
                     });
                 });
                 
-                SQL.Query('TRUNCATE TABLE film_distance', function(){
+                SQL.Query('TRUNCATE TABLE like_film_distance', function(){
                     SQL.Query('SELECT l.movie_id as id, ARRAY_AGG(l.user_id) as likes FROM likes l LEFT JOIN movie m ON l.movie_id = m.id GROUP BY (l.movie_id)', function(likes){
-                        SQL.Query('INSERT INTO film_distance VALUES ' + analyzeRecords(likes));
+                        SQL.Query('INSERT INTO like_film_distance VALUES ' + analyzeLikes(likes));
                     });
                 });
                 
-                resource.send('user_distance and film_distance updated!');
+                SQL.Query('TRUNCATE TABLE rating_user_distance', function(){
+                    SQL.Query('SELECT u.id, ARRAY_AGG(r.movie_id) as iid, ARRAY_AGG(r.rating) as rating FROM ratings r LEFT JOIN users u ON r.user_id = u.id GROUP BY (u.id)', function(data){
+                        SQL.Query('INSERT INTO rating_user_distance VALUES ' + analyzeRating(data));
+                    });
+                });
                 
-                function analyzeRecords(data)
+                SQL.Query('TRUNCATE TABLE rating_film_distance', function(){
+                    SQL.Query('SELECT r.movie_id as id, ARRAY_AGG(r.user_id) as iid, ARRAY_AGG(r.rating) as rating FROM ratings r LEFT JOIN movie m ON r.movie_id = m.id GROUP BY (r.movie_id)', function(data){
+                        SQL.Query('INSERT INTO rating_film_distance VALUES ' + analyzeRating(data));
+                    });
+                });
+                
+                resource.send('updated!');
+                
+                function analyzeLikes(data)
                 {
                     var result = []
                         count = 0;
@@ -108,10 +143,12 @@ var Actions = {
                             var analyze = getDistance(data[i].likes, data[_i].likes);
                             
                             result[count] = {
-                                from: data[i].id,
-                                to: data[_i].id,
+                                from_id: data[i].id,
+                                to_id: data[_i].id,
                                 l1: analyze[0],
-                                same_likes: analyze[1]
+                                l2: analyze[1],
+                                same_likes: analyze[2],
+                                g: analyze[3] == 'Infinity' ? '\'Infinity\'' : analyze[3]
                             };
                             
                             count++;
@@ -120,20 +157,79 @@ var Actions = {
                     
                     var sql = [];
                     for(var i = 0, l = result.length; i < l; i++)
-                        sql[i] = '(' + result[i].from + ', ' + result[i].to + ', ' + result[i].l1 + ', ' + result[i].same_likes + ')';
+                        sql[i] = '(' + result[i].from_id + ', ' + result[i].to_id + ', ' + result[i].l1 + ', ' + result[i].l2 + ', ' + result[i].g + ', ' + result[i].same_likes + ')';
                     
                     return sql;
                 }
                 
-                function getDistance(a, b)
+                function analyzeRating(data)
                 {
-                    var first = a.filter(function(i) { return b.indexOf(i) < 0; });
-                    var last  = b.filter(function(i) { return a.indexOf(i) < 0; });
+                    var result = []
+                        count = 0;
                     
-                    var diff = first.length + last.length;
-                    var same = a.length + b.length - diff;
+                    for (var i = 0, l = data.length; i < l; i++)
+                    {
+                        for (var _i = 0, _l = data.length; _i < l; _i++)
+                        {
+                            var analyze = getDistance(data[i].iid, data[_i].iid, data[i].rating, data[_i].rating);
+                            
+                            result[count] = {
+                                from_id: data[i].id,
+                                to_id: data[_i].id,
+                                l1: analyze[0],
+                                l2: analyze[1]
+                            };
+                            
+                            count++;
+                        }
+                    }
                     
-                    return [diff, same];
+                    var sql = [];
+                    for(var i = 0, l = result.length; i < l; i++)
+                        sql[i] = '(' + result[i].from_id + ', ' + result[i].to_id + ', ' + result[i].l1 + ', ' + result[i].l2 + ')';
+                    
+                    return sql;
+                }
+                
+                function getDistance(a, b, _a, _b)
+                {
+                    var mask = false;
+                    var l1 = l2 = 0;
+                    if(_a && _b)
+                    {
+                        mask = [];
+                        var mask_a = a.concat(b);
+                        var mask_c = _a.concat(_b);
+                        
+                        for(var i = 0; i < mask_a.length; i++)
+                            mask[mask_a[i]] = mask.indexOf(mask_a[i]) != -1 ? mask[mask_a[i]] - mask_c[i] : mask_c[i];
+                        
+                        var same_f = a.filter(function(i) { return b.indexOf(i) > -1; });
+                        
+                        for (var i = 0; i < same_f.length; i++)
+                        {
+                            l1 += mask[same_f[i]];
+                            l2 += Math.pow(mask[same_f[i]], 2);
+                        }
+                    }
+                    
+                    var first = a.filter(function(i) { return b.indexOf(i) < 0; }),
+                        last = b.filter(function(i) { return a.indexOf(i) < 0; }),
+                        full = first.concat(last);
+                    
+                    for (var i = 0; i < full.length; i++)
+                    {
+                        var item = mask ? (mask[full[i]] || 0) : 1;
+                        
+                        l1 += item;
+                        l2 += Math.pow(item, 2);
+                    }
+                    
+                    l2 = Math.sqrt(l2);
+                    var same = a.length + b.length - full.length;
+                    var g = same / (a.length + b.length - same);
+                    
+                    return [l1, l2, same, g];
                 }
             }
         }

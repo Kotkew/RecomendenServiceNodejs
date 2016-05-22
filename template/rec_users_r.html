@@ -1,17 +1,15 @@
 {% extends '_recommendations.html' %}
 
-{% block title %}Похожие пользователи{% endblock %}
+{% block title %}Похожие пользователи по рейтингу{% endblock %}
 
 {% block recblock %}
-<h2>Похожие пользователи</h2>
+<h2>Похожие пользователи по рейтингу</h2>
 <table class="table">
     <thead>
         <tr>
             <td>Пользователь</td>
             <td>Дистанция L1</td>
             <td>Дистанция L2</td>
-            <td>Общие лайки</td>
-            <td>Ж</td>
         </tr>
     </thead>
     {% for item in data %}
@@ -19,8 +17,6 @@
         <td>{{ item.name }}</td>
         <td>{{ item.l1 }}</td>
         <td>{{ item.l2 }}</td>
-        <td>{{ item.same_likes }}</td>
-        <td>{{ item.g }}</td>
     </tr>
     {% endfor %}
 </table>
