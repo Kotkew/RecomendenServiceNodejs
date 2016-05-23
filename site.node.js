@@ -41,7 +41,7 @@ var Actions = {
                 //SELECT m.id, m.title, m.poster, m.rank, ARRAY_AGG(l.user_id), ARRAY_AGG(c.text) FROM movie m LEFT JOIN likes l ON m.id = l.movie_id LEFT JOIN comment c ON m.id = c.movie_id WHERE m.id = 1 GROUP BY (m.id)
                 
                 //Возвращает несколько записей
-                SQL.Query('SELECT m.id, m.title, m.poster, m.rank, m.year, ARRAY_AGG(l.user_id) as likes, r.rating FROM movie m LEFT JOIN likes l ON m.id = l.movie_id LEFT JOIN ratings r ON m.id = r.movie_id WHERE m.id = ' + request.params.film_id + ' GROUP BY (m.id, r.rating)', function(data){
+                SQL.Query('SELECT m.id, m.title, m.poster, m.rank, m.year, ARRAY_AGG(l.user_id) as likes, r.rating FROM movie m LEFT JOIN likes l ON m.id = l.movie_id LEFT JOIN ratings r ON m.id = r.movie_id AND r.user_id = ' + request.cookies.id + ' WHERE m.id = ' + request.params.film_id + ' GROUP BY (m.id, r.rating)', function(data){
                     
                     SQL.Query('SELECT t1.text, t2.name FROM comment t1 JOIN users t2 ON t1.user_id = t2.id WHERE t1.movie_id = ' + request.params.film_id + ' ORDER BY t1.id', function(dataComments){
                         SQL.Query('SELECT * FROM movie WHERE rank BETWEEN ' + data[0].rank + ' - 0.5 AND ' + data[0].rank + ' + 0.5 AND year BETWEEN ' + data[0].year + ' - 3 AND ' + data[0].year + ' + 3 AND id <> ' + data[0].id, function(dataSame){
@@ -202,7 +202,7 @@ var Actions = {
                         var mask_c = _a.concat(_b);
                         
                         for(var i = 0; i < mask_a.length; i++)
-                            mask[mask_a[i]] = mask.indexOf(mask_a[i]) != -1 ? mask[mask_a[i]] - mask_c[i] : mask_c[i];
+                            mask[mask_a[i]] = mask.indexOf(mask_a[i]) != -1 ? Math.abs(mask[mask_a[i]] - mask_c[i]) : mask_c[i];
                         
                         var same_f = a.filter(function(i) { return b.indexOf(i) > -1; });
                         
